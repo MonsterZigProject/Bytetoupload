@@ -1,5 +1,5 @@
+//V1
 import Bundlr from '@bundlr-network/client';
-import { ethers } from 'ethers';
 
 export default async function handler(req, res) {
   const FileType = await import('file-type');
@@ -32,47 +32,30 @@ export default async function handler(req, res) {
       const detectedType = await FileType.fileTypeFromBuffer(buffer);
       const contentType = detectedType ? detectedType.mime : 'application/octet-stream';
 
-      // Inisialisasi bundlr dan ethers wallet
+      // Inisialisasi bundlr
       const bundlr = new Bundlr('https://node1.bundlr.network', 'matic', privateKey);
-      const provider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com');
-      const wallet = new ethers.Wallet(privateKey, provider);
 
       // Dapatkan harga aktual untuk file ini
       const price = await bundlr.getPrice(buffer.length);
       const bufferAmount = BigInt(10000); // buffer fee
       const totalNeeded = price + bufferAmount;
 
-      // Cek saldo Bundlr internal
       let bundlrBalance = await bundlr.getLoadedBalance();
-
-      // Cek saldo native MATIC wallet
-      const nativeBalance = await wallet.getBalance();
 
       console.log(`📦 Buffer size: ${buffer.length} bytes`);
       console.log(`💰 Upload price: ${price.toString()}`);
-      console.log(`💼 Bundlr balance (internal): ${bundlrBalance.toString()}`);
-      console.log(`💸 Wallet MATIC balance: ${ethers.utils.formatEther(nativeBalance)}`);
+      console.log(`💼 Bundlr balance: ${bundlrBalance.toString()}`);
 
-      // Jika saldo Bundlr kurang, cek saldo wallet dan fund
+      // Jika balance tidak cukup, fund
       if (bundlrBalance < totalNeeded) {
         const fundAmount = totalNeeded - bundlrBalance;
-
-        if (nativeBalance.lt(fundAmount)) {
-          return res.status(400).json({
-            error: "Insufficient native MATIC balance in wallet to fund Bundlr",
-            required: ethers.utils.formatEther(fundAmount),
-            current: ethers.utils.formatEther(nativeBalance)
-          });
-        }
-
+        console.log(`🔄 Funding Bundlr with: ${fundAmount.toString()}`);
         try {
-          console.log(`🔄 Funding Bundlr with: ${fundAmount.toString()}`);
           await bundlr.fund(fundAmount);
           bundlrBalance = await bundlr.getLoadedBalance();
-          console.log('✅ Fund success. New Bundlr balance:', bundlrBalance.toString());
         } catch (fundErr) {
           console.error("❌ Failed to fund Bundlr:", fundErr);
-          return res.status(500).json({ error: "Failed to fund Bundlr", detail: fundErr.message });
+          return res.status(500).json({ error: "Insufficient wallet MATIC balance for funding Bundlr", detail: fundErr.message });
         }
       }
 
