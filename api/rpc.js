@@ -49,7 +49,7 @@ export default async function handler(req, res) {
       await tx.sign();
       const result = await tx.upload();
 
-      console.log("✅ Uploaded to Arweave:", `https://arweave.net/${tx.id}`);
+      console.log("✅ Uploaded to Arweave:", `https://node1.irys.xyz/${tx.id}`);
 
       return res.status(200).json({
         result: `https://arweave.net/${tx.id}`,
