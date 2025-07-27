@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       console.log("✅ Uploaded to Arweave:", `https://arweave.net/${tx.id}`);
 
       return res.status(200).json({
-        result: `https://node1.irys.xyz//${tx.id}`,
+        result: `https://node1.irys.xyz/${tx.id}`,
         contentType,
         upload: result
       });
