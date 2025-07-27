@@ -1,4 +1,3 @@
-//V1
 import Bundlr from '@bundlr-network/client';
 
 export default async function handler(req, res) {
